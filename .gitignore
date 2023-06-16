@@ -1,0 +1,4 @@
+alteredcarbon/db.sqlite3
+*.pyc
+alteredcarbon/api/migrations
+alteredcarbon/env
