@@ -4,9 +4,11 @@
 from .serializers import ErrorLogSerializer, UpdateCheckSerializer, FirmwareSerializer, UserSerializer, GroupSerializer
 from django.contrib.auth.models import User, Group
 from .models import ErrorLog, UpdateCheck, Firmware
-from rest_framework import viewsets
-from rest_framework import permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
 from django.utils import timezone
+from django.conf import settings
+import re
 from .serializers import UserSerializer, GroupSerializer, ErrorLogSerializer, UpdateCheckSerializer, FirmwareSerializer
 
 
@@ -45,6 +47,45 @@ class UpdateCheckViewSet(viewsets.ModelViewSet):
     serializer_class = UpdateCheckSerializer
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
+    
+    def retrieve(self, request, pk=None):
+        update_check = self.get_object()
+        version = update_check.version
+        checked_date = update_check.checked_date
+        
+        if float(settings.APP_VERSION) > float(version):
+            data = {'version': version, 'checked_date': checked_date, 'status': 'update_available'}
+        else:    
+            data = {'version': version, 'checked_date': checked_date, 'status': 'system_upto_date'}
+        
+        return Response(data)
+
+
+    
+    # def retrieve(self, request, pk=None):
+    #     update_check = self.get_object()
+    #     serializer = UpdateCheckSerializer(update_check)
+
+    #     version = update_check.version
+    #     print('Version:', version)
+        
+    #     # version = str(version).replace('_', '.')
+    #     status = None
+        
+    #     try:
+    #         version_float = float(version)
+    #     except ValueError:
+    #         return Response({'status': 'Invalid version number format = ' + version}, status=400)
+
+    #     # if float(settings.APP_VERSION) > version_float:
+    #     #     status = 'Update available'
+    #     # else:
+    #     #     status = 'No update available'
+
+    #     data = {'status': status}
+    #     serializer = UpdateCheckSerializer(data=data)
+    #     serializer.is_valid(raise_exception=True)
+    #     return Response(serializer.data)
     
     
 class FirmwareViewSet(viewsets.ModelViewSet):

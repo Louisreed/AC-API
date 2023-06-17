@@ -19,6 +19,7 @@ class UpdateCheck(models.Model):
     """
     version = models.CharField(max_length=10)
     checked_date = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=50, default="status")
 
     def __str__(self):
         return f"{self.version} ({self.checked_date.strftime('%d %b %Y %H:%M:%S')})"
