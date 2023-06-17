@@ -7,4 +7,5 @@ alteredcarbon 2/.DS_Store
 .gitignore
 *.DS_Store
 db.sqlite3
+db.sqlite3.old
 flask.py
