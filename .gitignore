@@ -9,3 +9,4 @@ alteredcarbon 2/.DS_Store
 db.sqlite3
 db.sqlite3.old
 flask.py
+env/
