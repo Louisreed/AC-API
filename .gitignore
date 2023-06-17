@@ -1,4 +1,8 @@
 alteredcarbon/db.sqlite3
 *.pyc
-alteredcarbon/api/migrations
+alteredcarbon/api/migrations/
 alteredcarbon/env
+alteredcarbon 2/.DS_Store
+.gitignore
+*.DS_Store
+
