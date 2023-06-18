@@ -147,3 +147,6 @@ MEDIA_URL = '/media/'
 
 # App Version
 APP_VERSION = '0.7'
+
+# Chunk Size
+CHUNK_SIZE = '256'

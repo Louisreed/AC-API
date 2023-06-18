@@ -8,9 +8,42 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from django.utils import timezone
 from django.conf import settings
-import re
+import re, os
 from .serializers import UserSerializer, GroupSerializer, ErrorLogSerializer, UpdateCheckSerializer, FirmwareSerializer
 
+"""
+Variables
+"""
+
+chunk_size = int(settings.CHUNK_SIZE)
+
+"""
+Helpers
+"""
+
+def get_file_size(size_bytes):
+    """
+    Convert the given number of bytes to a human-readable format (e.g., KB, MB, GB).
+    """
+    if size_bytes == 0:
+        return "0B"  # Special case
+
+    size_names = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = 0
+    while size_bytes >= 1024 and i < len(size_names) - 1:
+        size_bytes /= 1024.0
+        i += 1
+    return "{:.2f} {}".format(size_bytes, size_names[i])
+
+
+def get_number_of_chunks(firmware_file, chunk_size):
+    num_chunks = firmware_file / chunk_size
+    return num_chunks
+
+
+"""
+API Endpoint Views
+"""
 
 class UserViewSet(viewsets.ModelViewSet):
     """
@@ -46,46 +79,29 @@ class UpdateCheckViewSet(viewsets.ModelViewSet):
     queryset = UpdateCheck.objects.all()
     serializer_class = UpdateCheckSerializer
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
     
     def retrieve(self, request, pk=None):
+        
         update_check = self.get_object()
         version = update_check.version
         checked_date = update_check.checked_date
         
+        # print("updated")
+        
         if float(settings.APP_VERSION) > float(version):
-            data = {'version': version, 'checked_date': checked_date, 'status': 'update_available'}
+            data = {
+                'version': version, 
+                'checked_date': checked_date, 
+                'status': 'update_available'
+                }
         else:    
-            data = {'version': version, 'checked_date': checked_date, 'status': 'system_upto_date'}
+            data = {
+                'version': version, 
+                'checked_date': checked_date, 
+                'status': 'system_upto_date'
+                }
         
         return Response(data)
-
-
-    
-    # def retrieve(self, request, pk=None):
-    #     update_check = self.get_object()
-    #     serializer = UpdateCheckSerializer(update_check)
-
-    #     version = update_check.version
-    #     print('Version:', version)
-        
-    #     # version = str(version).replace('_', '.')
-    #     status = None
-        
-    #     try:
-    #         version_float = float(version)
-    #     except ValueError:
-    #         return Response({'status': 'Invalid version number format = ' + version}, status=400)
-
-    #     # if float(settings.APP_VERSION) > version_float:
-    #     #     status = 'Update available'
-    #     # else:
-    #     #     status = 'No update available'
-
-    #     data = {'status': status}
-    #     serializer = UpdateCheckSerializer(data=data)
-    #     serializer.is_valid(raise_exception=True)
-    #     return Response(serializer.data)
     
     
 class FirmwareViewSet(viewsets.ModelViewSet):
@@ -95,19 +111,29 @@ class FirmwareViewSet(viewsets.ModelViewSet):
     queryset = Firmware.objects.all()
     serializer_class = FirmwareSerializer
     permission_classes = [permissions.IsAuthenticated]
+            
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        checked_date = str(instance.checked_date)
+        filename = str(instance.filename)
+        firmware_id = instance.id
+        firmware_file = str(instance.firmware_file)
+        num_chunks = get_number_of_chunks(instance.firmware_file.size, chunk_size)
+
+        # print('firmware name: ' + filename)
+        # print('firmware file: ' + firmware_file)
+        # print('firmware file size:', get_file_size(instance.firmware_file.size))
+        # print('chunks: ' + str(num_chunks))
+
+        data = {
+            'id: ' + str(firmware_id),
+            'filename: ' + filename,
+            'checked_date: ' + checked_date,
+            'firmware_file: ' + firmware_file,
+            'file_size: ' + get_file_size(instance.firmware_file.size),
+            'chunks: ' + str(num_chunks)
+            }
+        
+        return Response(data)
     
-    def perform_create(self, serializer):
-        # Get the firmware data from validated_data
-        firmware_file = serializer.validated_data.get('firmware_file')
-
-        # Create the Firmware instance first without the actual content file
-        filename = serializer.validated_data['filename']
-        chunk_size = serializer.validated_data['chunk_size']
-        checked_date = timezone.now()
-        firmware_instance = Firmware(firmware_file=filename, chunk_size=chunk_size, checked_date=checked_date)
-
-        # Then save the file using the new Firmware instance as filename
-        with open(filename, 'wb') as f:
-            f.write(firmware_file.read())
-        firmware_instance.save()
 
