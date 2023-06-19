@@ -239,7 +239,7 @@ class getFirmware(viewsets.ModelViewSet):
         
         # Call update_file() function and get output data
         line_to_add = ['value1', 'value2', 'value3']
-        update_file_data = update_file(datafile='datalog_coffee_n_tea_experiment.csv', line=line_to_add)
+        update_file_data = update_file(datafile='data/datalog_coffee_n_tea_experiment.csv', line=line_to_add)
 
         print("getting update")
         
