@@ -10,8 +10,8 @@ from api import views
 from api.views import logError, checkUpdateAvailable, getFirmware
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet)
-router.register(r'groups', views.GroupViewSet)
+# router.register(r'users', views.UserViewSet)
+# router.register(r'groups', views.GroupViewSet)
 router.register('error_reporting', logError, basename='logError')
 router.register('check_update', checkUpdateAvailable, basename='check_update')
 router.register('firmware', getFirmware, basename='firmware')
