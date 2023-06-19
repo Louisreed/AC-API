@@ -30,4 +30,4 @@ class UpdateCheckSerializer(serializers.HyperlinkedModelSerializer):
 class FirmwareSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Firmware
-        fields = ['filename', 'checked_date', 'firmware_file']
+        fields = ['checked_date', 'firmware_file']

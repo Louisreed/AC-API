@@ -146,8 +146,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
 # Firmware Filename
-FILENAME = "binfiles/Sensor Wifi Eval V2 Application Code V0_3.bin"
-FILENAME_ROLLBACK = "binfiles/Sensor WiFi Eval Rework V2_1 Application Code.bin"
+FILENAME = "Sensor Wifi Eval V2 Application Code V0_3.bin"
+FILENAME_ROLLBACK = "Sensor WiFi Eval Rework V2_1 Application Code.bin"
 
 # Header
 HEADER = 'id,bnc,bfc,brc,bfcc,bav,bac,bsc,bml,bap,bsh,bsoc,as0,as1,as2,as3,as4,as5,' \

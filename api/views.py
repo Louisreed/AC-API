@@ -8,7 +8,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from django.utils import timezone
 from django.conf import settings
-import re, os, zlib, csv
+import re, os, zlib, csv, math
 from .serializers import UserSerializer, GroupSerializer, ErrorLogSerializer, UpdateCheckSerializer, FirmwareSerializer
 
 """
@@ -16,6 +16,7 @@ Variables
 """
 
 chunk_size = int(settings.CHUNK_SIZE)
+filename = settings.FILENAME
 filename_rollback = settings.FILENAME_ROLLBACK
 header = settings.HEADER
 
@@ -55,6 +56,14 @@ def get_file_chunks(firmware_file, chunk_size):
             if chunk:
                 chunk_list.append(chunk)
     return chunk_list
+
+
+def get_number_of_chunks(firmware_file, chunk_size):
+    file_size = get_file_size(firmware_file)
+    
+    num_chunks = file_size / chunk_size
+    
+    return num_chunks
 
 
 def add_checksum_to_packet(packet):
@@ -133,6 +142,16 @@ class logError(viewsets.ModelViewSet):
     queryset = ErrorLog.objects.all()
     serializer_class = ErrorLogSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    # def logError():
+    #     if not os.path.isfile(LOG_FILE):
+    #         create_file('error', LOG_FILE)
+    #     if request.method == 'POST':
+    #         values = []
+    #         for element in request.form:
+    #             print(f'{element}, {request.form[element]}')
+    #             values.append(request.form[element])
+    #     return 'Error logged'
 
 
 class checkUpdateAvailable(viewsets.ModelViewSet):
@@ -191,9 +210,12 @@ class getFirmware(viewsets.ModelViewSet):
         
         # Filename
         if instance.filename:
-            filename = str(instance.filename)
+            filename = instance.filename
         else:
-            filename = str(instance.filename_rollback)
+            if filename:
+                filename = filename
+            else:
+                filename = filename_rollback 
             
         # Firmware File
         firmware_file = str(instance.firmware_file.path)
@@ -213,17 +235,25 @@ class getFirmware(viewsets.ModelViewSet):
         packet_n_checksum = get_file_chunks_with_checksums(instance.firmware_file, num_chunks)
 
         # Call create_file() function and get output data
-        create_file_data = create_file(directory='my_directory', datafile='my_file.csv')
+        create_file_data = create_file(directory='data', datafile='datalog_coffee_n_tea_experiment.csv')
         
         # Call update_file() function and get output data
         line_to_add = ['value1', 'value2', 'value3']
-        update_file_data = update_file(datafile='my_file.csv', line=line_to_add)
+        update_file_data = update_file(datafile='datalog_coffee_n_tea_experiment.csv', line=line_to_add)
 
         print("getting update")
-        # print('firmware name: ' + filename)
-        # print('firmware file: ' + firmware_file)
-        # print('firmware file size:', get_file_size(instance.firmware_file.size))
-        # print('chunks: ' + str(num_chunks))
+        
+        get_size_flag = int(args.get('gsf', 0))
+        if get_size_flag == 1:
+            num_requests = get_number_of_chunks(instance.firmware_file, chunk_size)
+            return f"{str(math.ceil(num_requests))},{chunk_size+4}"
+
+        get_data_flag = int(args.get('gdf', 0))
+        if get_data_flag == 1:
+            chunk = int(args.get('chunk', 0))
+            file_chunks = get_file_chunks_with_checksums(instance.firmware_file, chunk_size)
+            print(f"downloading {chunk+1} of {len(file_chunks)}")
+            return file_chunks[chunk]
 
         data = [
             'Data for testing:',
@@ -238,7 +268,9 @@ class getFirmware(viewsets.ModelViewSet):
             'chunks_checksums: ' + str(packet_n_checksum),
             'create_file_output: ' + str(create_file_data),
             'update_file_output: ' + str(update_file_data),
-            'args: ' + str(args)
+            'args: ' + str(args),
+            'get_size_flag: ' + str(get_size_flag),
+            'get_data_flag: ' + str(get_data_flag)
         ]
         
         return Response(data)

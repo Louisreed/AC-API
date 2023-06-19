@@ -1,4 +1,7 @@
 from django.db import models
+from django.conf import settings
+
+filename = settings.FILENAME
 
 
 class ErrorLog(models.Model):
@@ -29,8 +32,8 @@ class Firmware(models.Model):
     """
     Model class for firmware updates.
     """
-    filename = models.CharField(max_length=255, default='firmware_upload_file')
-    firmware_file = models.FileField(upload_to='firmwares/')
+    filename = models.CharField(max_length=255, default=filename)
+    firmware_file = models.FileField(upload_to='binfiles/')
     checked_date = models.DateTimeField(auto_now=True)
 
     def __str__(self):
