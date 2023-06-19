@@ -145,8 +145,22 @@ REST_FRAMEWORK = {
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+# Firmware Filename
+FILENAME = "binfiles/Sensor Wifi Eval V2 Application Code V0_3.bin"
+FILENAME_ROLLBACK = "binfiles/Sensor WiFi Eval Rework V2_1 Application Code.bin"
+
+# Header
+HEADER = 'id,bnc,bfc,brc,bfcc,bav,bac,bsc,bml,bap,bsh,bsoc,as0,as1,as2,as3,as4,as5,' \
+         'as6,as7,as8,as9,ash,ms1,mh1,ms2,mh2,ms3,mh3,ms4,mh5,t,h,ts,bs,bp,bh,bt'
+
 # App Version
 APP_VERSION = '0.7'
 
 # Chunk Size
 CHUNK_SIZE = '256'
+
+# Log File
+LOG_FILE = 'data/datalog_coffee_n_tea_experiment.csv'
+
+# Error File
+ERROR_FILE = 'data/error_log.csv'

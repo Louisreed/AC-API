@@ -11,3 +11,4 @@ db.sqlite3.old
 flask.py
 env/
 media/
+*.csv

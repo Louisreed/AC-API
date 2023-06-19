@@ -7,14 +7,14 @@ from django.conf.urls.static import static
 from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
 from api import views
-from api.views import ErrorLogViewSet, UpdateCheckViewSet, FirmwareViewSet
+from api.views import logError, checkUpdateAvailable, getFirmware
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
 router.register(r'groups', views.GroupViewSet)
-router.register('error_reporting', ErrorLogViewSet, basename='log_error')
-router.register('check_update', UpdateCheckViewSet, basename='check_update')
-router.register('firmware', FirmwareViewSet, basename='firmware')
+router.register('error_reporting', logError, basename='logError')
+router.register('check_update', checkUpdateAvailable, basename='check_update')
+router.register('firmware', getFirmware, basename='firmware')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

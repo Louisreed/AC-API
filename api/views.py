@@ -8,7 +8,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from django.utils import timezone
 from django.conf import settings
-import re, os
+import re, os, zlib, csv
 from .serializers import UserSerializer, GroupSerializer, ErrorLogSerializer, UpdateCheckSerializer, FirmwareSerializer
 
 """
@@ -16,6 +16,9 @@ Variables
 """
 
 chunk_size = int(settings.CHUNK_SIZE)
+filename_rollback = settings.FILENAME_ROLLBACK
+header = settings.HEADER
+
 
 """
 Helpers
@@ -36,10 +39,70 @@ def get_file_size(size_bytes):
     return "{:.2f} {}".format(size_bytes, size_names[i])
 
 
-def get_number_of_chunks(firmware_file, chunk_size):
-    num_chunks = firmware_file / chunk_size
-    return num_chunks
+def get_file_chunks(firmware_file, chunk_size):
+    """
+    Returns a list of chunks from the given firmware file, where each chunk
+    is chunk_size bytes long (except possibly the last one).
+    """
+    chunk_list = []
+    firmware_file_path = firmware_file.path
+    
+    with open(firmware_file_path, mode='rb') as f:
+        chunk = f.read(chunk_size)
+        chunk_list.append(chunk)
+        while chunk:
+            chunk = f.read(chunk_size)
+            if chunk:
+                chunk_list.append(chunk)
+    return chunk_list
 
+
+def add_checksum_to_packet(packet):
+    numbers = [packet[i] for i in range(0, len(packet))]
+    checksum = zlib.crc32(packet).to_bytes(4, 'little')
+    checksum_list = [checksum[i] for i in range(0, len(checksum))]
+    for item in checksum_list:
+        numbers.append(item)
+    packet_w_checksum = bytes(numbers)
+    return packet_w_checksum
+
+
+def get_file_chunks_with_checksums(firmware_file, chunk_size):
+    byte_list = []
+    byte_list = get_file_chunks(firmware_file, chunk_size)
+    packet_n_checksum = []
+    for packet in byte_list:
+        packet_n_checksum.append(add_checksum_to_packet(packet))
+        
+    return packet_n_checksum
+
+
+def create_file(directory, datafile):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        
+    with open(datafile, "w+", newline='\n', encoding='utf-8', buffering=1) as f:
+        f.write(header)
+        f.write('\n')
+        f.flush()
+        
+    return {
+        'directory_created': directory,
+        'file_created': datafile
+    }
+        
+        
+def update_file(datafile,line):
+    with open(datafile, "a", newline='\n', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter=',')
+        writer.writerow(line)
+        f.write('\n')
+        f.flush()
+        
+    return {
+        'file_updated': datafile,
+        'line_added': line
+    }
 
 """
 API Endpoint Views
@@ -63,7 +126,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class ErrorLogViewSet(viewsets.ModelViewSet):
+class logError(viewsets.ModelViewSet):
     """
     API endpoint that allows error logs to be viewed or edited.
     """
@@ -72,7 +135,7 @@ class ErrorLogViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class UpdateCheckViewSet(viewsets.ModelViewSet):
+class checkUpdateAvailable(viewsets.ModelViewSet):
     """
     API endpoint that allows updates to be viewed or edited.
     """
@@ -89,22 +152,22 @@ class UpdateCheckViewSet(viewsets.ModelViewSet):
         # print("updated")
         
         if float(settings.APP_VERSION) > float(version):
-            data = {
-                'version': version, 
-                'checked_date': checked_date, 
-                'status': 'update_available'
-                }
+            data = [
+                'version: ' + version, 
+                'checked_date: ' + str(checked_date), 
+                'status: ' + 'update_available'
+            ]
         else:    
-            data = {
-                'version': version, 
-                'checked_date': checked_date, 
-                'status': 'system_upto_date'
-                }
+            data = [
+                'version: ' + version, 
+                'checked_date: ' + str(checked_date), 
+                'status: ' + 'system_upto_date'
+            ]
         
         return Response(data)
     
     
-class FirmwareViewSet(viewsets.ModelViewSet):
+class getFirmware(viewsets.ModelViewSet):
     """
     API endpoint that allows firmware to be viewed or edited.
     """
@@ -113,26 +176,70 @@ class FirmwareViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
             
     def retrieve(self, request, *args, **kwargs):
+        
+        # Args
+        args = request.GET
+        
+        # Object
         instance = self.get_object()
-        checked_date = str(instance.checked_date)
-        filename = str(instance.filename)
+        
+        # Id
         firmware_id = instance.id
-        firmware_file = str(instance.firmware_file)
-        num_chunks = get_number_of_chunks(instance.firmware_file.size, chunk_size)
+        
+        # Checked date
+        checked_date = str(instance.checked_date)
+        
+        # Filename
+        if instance.filename:
+            filename = str(instance.filename)
+        else:
+            filename = str(instance.filename_rollback)
+            
+        # Firmware File
+        firmware_file = str(instance.firmware_file.path)
+        # firmware_file_size = os.stat(instance.file).st_size
+        
+        # Chunks
+        with instance.firmware_file.open(mode='rb') as file:
+            chunk_list = get_file_chunks(instance.firmware_file, chunk_size)
+        num_chunks = len(chunk_list)
+        
+        # Add Checksum to Packet
+        with instance.firmware_file.open(mode='rb') as file:
+            packet = file.read()
+        packet_w_checksum = add_checksum_to_packet(packet)
+        
+        # File Chunks with Checksums
+        packet_n_checksum = get_file_chunks_with_checksums(instance.firmware_file, num_chunks)
 
+        # Call create_file() function and get output data
+        create_file_data = create_file(directory='my_directory', datafile='my_file.csv')
+        
+        # Call update_file() function and get output data
+        line_to_add = ['value1', 'value2', 'value3']
+        update_file_data = update_file(datafile='my_file.csv', line=line_to_add)
+
+        print("getting update")
         # print('firmware name: ' + filename)
         # print('firmware file: ' + firmware_file)
         # print('firmware file size:', get_file_size(instance.firmware_file.size))
         # print('chunks: ' + str(num_chunks))
 
-        data = {
+        data = [
+            'Data for testing:',
             'id: ' + str(firmware_id),
             'filename: ' + filename,
             'checked_date: ' + checked_date,
             'firmware_file: ' + firmware_file,
             'file_size: ' + get_file_size(instance.firmware_file.size),
-            'chunks: ' + str(num_chunks)
-            }
+            'chunks: ' + str(num_chunks),
+            'packet: ' + str(packet),
+            'checksum_packet: ' + str(packet_w_checksum),
+            'chunks_checksums: ' + str(packet_n_checksum),
+            'create_file_output: ' + str(create_file_data),
+            'update_file_output: ' + str(update_file_data),
+            'args: ' + str(args)
+        ]
         
         return Response(data)
     
