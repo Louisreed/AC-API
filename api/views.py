@@ -259,8 +259,6 @@ class getFirmware(viewsets.ModelViewSet):
             'packet: ' + str(packet),
             'checksum_packet: ' + str(packet_w_checksum),
             'chunks_checksums: ' + str(packet_n_checksum),
-            'create_file_output: ' + str(create_file_data),
-            'update_file_output: ' + str(update_file_data),
             'args: ' + str(args),
             'get_size_flag: ' + str(get_size_flag),
             'get_data_flag: ' + str(get_data_flag)
