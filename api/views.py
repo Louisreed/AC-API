@@ -168,16 +168,21 @@ class checkUpdateAvailable(viewsets.ModelViewSet):
         version = update_check.version
         checked_date = update_check.checked_date
         
-        # print("updated")
+        # Id
+        update_id = update_check.id
+
+        print("getting update")
         
         if float(settings.APP_VERSION) > float(version):
             data = [
+                'id: ' + str(update_id),
                 'version: ' + version, 
                 'checked_date: ' + str(checked_date), 
                 'status: ' + 'update_available'
             ]
         else:    
             data = [
+                'id: ' + str(update_id),
                 'version: ' + version, 
                 'checked_date: ' + str(checked_date), 
                 'status: ' + 'system_upto_date'
@@ -234,7 +239,7 @@ class getFirmware(viewsets.ModelViewSet):
         # File Chunks with Checksums
         packet_n_checksum = get_file_chunks_with_checksums(instance.firmware_file, num_chunks)
 
-        print("getting update")
+        print("getting firmware update")
         
         get_size_flag = int(args.get('gsf', 0))
         if get_size_flag == 1:

@@ -24,7 +24,7 @@ class ErrorLogSerializer(serializers.HyperlinkedModelSerializer):
 class UpdateCheckSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = UpdateCheck
-        fields = ['version', 'checked_date']
+        fields = ['id', 'version', 'checked_date']
 
 
 class FirmwareSerializer(serializers.HyperlinkedModelSerializer):
