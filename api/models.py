@@ -8,8 +8,7 @@ class ErrorLog(models.Model):
     """
     Model class for storing error logs.
     """
-    message = models.CharField(max_length=255, help_text="Error message")
-    stack_trace = models.TextField(help_text="Stack Trace")
+    value = models.TextField(max_length=500, help_text="Error values", default="Error value")
     created = models.DateTimeField(auto_now_add=True, help_text="Time at which the error occurred")
 
     def __str__(self):

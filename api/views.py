@@ -143,6 +143,23 @@ class logError(viewsets.ModelViewSet):
     serializer_class = ErrorLogSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def retrieve(self, request, pk=None):
+    
+        error = self.get_object()
+        created = error.created
+        
+        # Id
+        error_id = error.id
+        
+        data = [
+            'id: ' + str(error_id), 
+            'value: ' + str(error.value),       
+        ]
+    
+        
+        return Response(data)
+
+    
     # def logError():
     #     if not os.path.isfile(LOG_FILE):
     #         create_file('error', LOG_FILE)

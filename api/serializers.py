@@ -18,7 +18,7 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
 class ErrorLogSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ErrorLog
-        fields = '__all__'
+        fields = ['id', 'value', 'created']
         
         
 class UpdateCheckSerializer(serializers.HyperlinkedModelSerializer):
@@ -30,4 +30,4 @@ class UpdateCheckSerializer(serializers.HyperlinkedModelSerializer):
 class FirmwareSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Firmware
-        fields = ['checked_date', 'firmware_file']
+        fields = ['firmware_file', 'checked_date']
