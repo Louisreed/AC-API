@@ -234,13 +234,6 @@ class getFirmware(viewsets.ModelViewSet):
         # File Chunks with Checksums
         packet_n_checksum = get_file_chunks_with_checksums(instance.firmware_file, num_chunks)
 
-        # Call create_file() function and get output data
-        create_file_data = create_file(directory='data', datafile='datalog_coffee_n_tea_experiment.csv')
-        
-        # Call update_file() function and get output data
-        line_to_add = ['value1', 'value2', 'value3']
-        update_file_data = update_file(datafile='data/datalog_coffee_n_tea_experiment.csv', line=line_to_add)
-
         print("getting update")
         
         get_size_flag = int(args.get('gsf', 0))
