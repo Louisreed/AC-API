@@ -271,7 +271,6 @@ class getFirmware(viewsets.ModelViewSet):
             return file_chunks[chunk]
 
         data = [
-            'Data for testing:',
             'id: ' + str(firmware_id),
             'filename: ' + filename,
             'checked_date: ' + checked_date,
